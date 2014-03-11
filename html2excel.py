@@ -1,5 +1,5 @@
 __author__ = 'Louis'
-#-*- coding:gbk -*-
+#-*- coding:utf-8 -*-
 import lxml.html
 from lxml.cssselect import CSSSelector
 import urllib2
@@ -10,6 +10,7 @@ from datetime import date
 import glob
 import codecs
 import sys
+import chardet
 
 
 class DataExtractor:
@@ -43,7 +44,7 @@ class DataExtractor:
                 if len(result) == 0:
                     self.logger('CSS select fail')
             if s[1] == u'text':
-                self.result[n] = ([x.text.replace(u'ÃÀÔª', '').replace(u'$', '') for x in result])
+                self.result[n] = ([x.text.replace(u'ç¾å…ƒ', '').replace(u'$', '') for x in result])
             elif s[1] == u'url':
                 self.result[n] = ([x.get(u'href') for x in result])
             elif s[1] == u'img':
@@ -64,15 +65,16 @@ class FileLocator:
         self.log_handler.write(msg + '\r\n')
 
     def __init__(self, root):
+        encoding = sys.getfilesystemencoding()
         for dirpath, dirnames, filenames in os.walk(root):
             if len(dirnames) != 0:
                 for filename in filenames:
                     if os.path.splitext(filename)[1] == '.htm' or os.path.splitext(filename) == '.html':
                         if len(glob.glob(os.path.join(dirpath, '*.txt'))) != 0:
-                            temp = glob.glob(os.path.join(dirpath, '*.txt'))[0].split('\\')
-                            self.file_location.append((dirpath.decode('gbk'), filename.decode('gbk'), temp[len(temp) - 1].decode('gbk')))
+                            temp = os.path.basename(glob.glob(os.path.join(dirpath, '*.txt'))[0])
+                            self.file_location.append((dirpath.decode(encoding), filename.decode(encoding), temp.decode(encoding)))
                         else:
-                            self.logger(dirpath + ':\r\nÃ»ÓĞ¶ÔÓ¦µÄcontactÎÄ¼ş' )
+                            self.logger(dirpath + ':\r\næ²¡æœ‰å¯¹åº”çš„contactæ–‡ä»¶' )
 
     def get_result(self):
         return self.file_location
@@ -97,7 +99,9 @@ class RegExtractor:
         self.location = location
         self.reg = reg
         self.file_handler = open(location, 'r')
-        self.content = self.file_handler.read().decode('gbk')
+        self.content = self.file_handler.read()
+        file_encoding = chardet.detect(self.content)
+        self.content = self.content.decode(file_encoding['encoding'])
 
     def get_result(self):
         warning = 0
@@ -110,7 +114,7 @@ class RegExtractor:
                 result = temp[0]
             self.result[n] = result
         if warning > 0:
-            self.logger(u'ÁªÏµÈËĞÅÏ¢²»×ã')
+            self.logger(u'è”ç³»äººæ ¼å¼é”™è¯¯')
         return self.result
 
 
@@ -167,46 +171,46 @@ class ExcelOutput:
                             self.worksheet.insert_image(self.current_row, self.properties[n][1], temp)
                 for n in self.contact_data.keys():
                     self.worksheet.write_string(self.current_row, self.properties[n][1], self.contact_data[n], self.text_format)
-                self.worksheet.write_datetime(self.current_row, self.properties[u'¶©µ¥ÈÕÆÚ'][1], date.fromtimestamp(os.path.getmtime(os.path.join(dirpath, html_file))), self.date_format)
+                self.worksheet.write_datetime(self.current_row, self.properties[u'è®¢å•æ—¥æœŸ'][1], date.fromtimestamp(os.path.getmtime(os.path.join(dirpath, html_file))), self.date_format)
                 if i == len(self.html_data.values()[0]) -1:
-                    self.worksheet.write_number(self.current_row, self.properties[u'×Ü¼Æ'][1], sum(float(x) for x in self.html_data[u'¼Û¸ñ']), self.money_format)
+                    self.worksheet.write_number(self.current_row, self.properties[u'æ€»è®¡'][1], sum(float(x) for x in self.html_data[u'ä»·æ ¼']), self.money_format)
                 self.current_row += 1
 
 css_selector = {
-    u'Ãû³Æ': ('.desc .name', 'text'),
+    u'åç§°': ('.desc .name', 'text'),
     u'ID': ('.desc .sku', 'text'),
-    u'Á´½Ó': ('.item-desc .img a', 'url'),
-    u'ÑÕÉ«': ('.primary-cart-content .item .color', 'text'),
-    u'³ßÂë': ('.primary-cart-content .item .size', 'text'),
-    u'¼Û¸ñ': ('.primary-cart-content .price .offer-price', 'text'),
-    u'Í¼Æ¬': ('.primary-cart-content .prod-img', 'img'),
+    u'é“¾æ¥': ('.item-desc .img a', 'url'),
+    u'é¢œè‰²': ('.primary-cart-content .item .color', 'text'),
+    u'å°ºç ': ('.primary-cart-content .item .size', 'text'),
+    u'ä»·æ ¼': ('.primary-cart-content .price .offer-price', 'text'),
+    u'å›¾ç‰‡': ('.primary-cart-content .prod-img', 'img'),
 }
 
 reg_selector = {
-    u'ÁªÏµÈË': u"ĞÕÃû[:£º\s]*([a-zA-Z0-9_\u4e00-\u9fa5]+)\$*\n*",
-    u'QQ': u"(?:QQ|qq)[:£º\s]*([1-9][0-9]{4,})\$*\n*",
-    u'ÍúÍú': u"ÍúÍú[:£º\s]*(.+)\$*\n*",
-    u'µç»°': u"(?:ÊÖ»ú|µç»°)[:£º\s]*(.+)\$*\n*",
-    u'µØÖ·': u"µØÖ·[:£º\s]*(.+)\$*\n*",
+    u'è”ç³»äºº': u"å§“å[:ï¼š\s]*([a-zA-Z0-9_\u4e00-\u9fa5]+)\$*\n*",
+    u'QQ': u"(?:QQ|qq)[:ï¼š\s]*([1-9][0-9]{4,})\$*\n*",
+    u'æ—ºæ—º': u"æ—ºæ—º[:ï¼š\s]*([a-zA-Z0-9_\u4e00-\u9fa5]+)\$*\n*",
+    u'ç”µè¯': u"(?:æ‰‹æœº|ç”µè¯)[:ï¼š\s]*((?:\d{11})|(?:(?:\d{7,8})|(?:\d{4}|\d{3}|\d{5})-(?:\d{7,8})|(?:\d{4}|\d{3})-(?:\d{7,8})-(?:\d{4}|\d{3}|\d{2}|\d{1})|(?:\d{7,8})-(?:\d{4}|\d{3}|\d{2}|\d{1})))\$*\n*",
+    u'åœ°å€': u"åœ°å€[:ï¼š\s]*(.+)\$*\n*",
 }
 
 
 properties = {
-    u'Ãû³Æ': (15, 0, 'text'),
+    u'åç§°': (15, 0, 'text'),
     u"ID": (10, 1, 'text'),
-    u'Á´½Ó': (15, 2, 'text'),
-    u"ÑÕÉ«": (8, 3, 'text'),
-    u"³ßÂë": (8, 4, 'text'),
-           #(u"¿â´æ", 8),
-    u"¼Û¸ñ": (8, 5, 'money'),
-    u"ÁªÏµÈË": (8, 6, 'text'),
+    u'é“¾æ¥': (15, 2, 'text'),
+    u"é¢œè‰²": (8, 3, 'text'),
+    u"å°ºç ": (8, 4, 'text'),
+           #(u"åº“å­˜", 8),
+    u"ä»·æ ¼": (8, 5, 'money'),
+    u"è”ç³»äºº": (8, 6, 'text'),
     u"QQ": (12, 7, 'text'),
-    u"ÍúÍú": (15, 8, 'text'),
-    u"µç»°": (15, 9, 'text'),
-    u"µØÖ·": (20, 10, 'text'),
-    u"¶©µ¥ÈÕÆÚ": (10, 11, 'date'),
-    u"×Ü¼Æ": (8, 12, 'money'),
-    u"Í¼Æ¬": (14, 13, 'img')
+    u"æ—ºæ—º": (15, 8, 'text'),
+    u"ç”µè¯": (15, 9, 'text'),
+    u"åœ°å€": (20, 10, 'text'),
+    u"è®¢å•æ—¥æœŸ": (10, 11, 'date'),
+    u"æ€»è®¡": (8, 12, 'money'),
+    u"å›¾ç‰‡": (14, 13, 'img')
 }
 
 if os.path.isfile('Extract Error.txt'):
