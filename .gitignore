@@ -213,3 +213,11 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+#Error Log
+Extract Error.txt
+Contact Info Error.txt
+File Locate Error.txt
+
+#测试文件
+测试/
