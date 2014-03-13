@@ -101,8 +101,11 @@ class RegExtractor:
         self.file_handler = open(location, 'r')
         self.content = self.file_handler.read()
         file_encoding = chardet.detect(self.content)
-        self.content = self.content.decode(file_encoding['encoding'])
-
+        file_encoding['encoding'] = file_encoding['encoding'] == 'GB2312' and 'gbk' or file_encoding['encoding']
+        try:
+            self.content = self.content.decode(file_encoding['encoding'])
+        except Exception, e:
+            self.logger(e.__str__())
     def get_result(self):
         warning = 0
         for n, r in self.reg.items():
